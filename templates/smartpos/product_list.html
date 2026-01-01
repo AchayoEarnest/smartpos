@@ -1,0 +1,275 @@
+{% extends 'smartpos/base.html' %} {% block title %}Products - SmartPOS{%
+endblock %} {% block extra_css %}
+<style>
+  .product-filter {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .filter-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-item label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #2c3e50;
+  }
+
+  .filter-item input,
+  .filter-item select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+
+  .table-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .btn-add {
+    background: var(--success);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-add:hover {
+    background: #229954;
+  }
+
+  .product-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .product-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-edit,
+  .btn-delete {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+
+  .btn-edit {
+    background: #3498db;
+    color: white;
+  }
+
+  .btn-delete {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .status-badge {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .status-active {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .low-stock {
+    background: #fff3cd;
+    color: #856404;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="fas fa-box"></i> Product Inventory</h1>
+  <a href="{% url 'add_product' %}" class="btn-add">
+    <i class="fas fa-plus"></i> Add Product
+  </a>
+</div>
+
+<div class="product-filter">
+  <div class="filter-group">
+    <div class="filter-item">
+      <label>Search Product</label>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search by name or barcode..."
+      />
+    </div>
+    <div class="filter-item">
+      <label>Category</label>
+      <select id="categoryFilter">
+        <option value="">All Categories</option>
+        <option value="drinks">Drinks</option>
+        <option value="food">Food</option>
+        <option value="groceries">Groceries</option>
+        <option value="household">Household Items</option>
+        <option value="alcohol">Alcohol</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <label>Stock Status</label>
+      <select id="stockFilter">
+        <option value="">All</option>
+        <option value="in-stock">In Stock</option>
+        <option value="low-stock">Low Stock</option>
+        <option value="out-stock">Out of Stock</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="product-table">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Product Name</th>
+        <th>Barcode</th>
+        <th>Category</th>
+        <th>Cost Price</th>
+        <th>Selling Price</th>
+        <th>Margin</th>
+        <th>Stock</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        <td>
+          <strong>{{ product.name }}</strong>
+        </td>
+        <td>
+          <code>{{ product.barcode|default:"—" }}</code>
+        </td>
+        <td>
+          <span class="badge bg-secondary">{{ product.category.name }}</span>
+        </td>
+        <td>KES {{ product.cost_price }}</td>
+        <td>KES {{ product.selling_price }}</td>
+        <td>
+          <strong>{{ product.margin|floatformat:1 }}%</strong>
+        </td>
+        <td>
+          {% if product.inventory.quantity_on_hand <= 0 %}
+          <span class="status-badge status-inactive">Out of Stock</span>
+          {% elif product.inventory.is_low_stock %}
+          <span class="status-badge low-stock"
+            >{{ product.inventory.quantity_on_hand }} (Low)</span
+          >
+          {% else %} {{ product.inventory.quantity_on_hand }} {{
+          product.unit_of_measure }} {% endif %}
+        </td>
+        <td>
+          {% if product.is_active %}
+          <span class="status-badge status-active">Active</span>
+          {% else %}
+          <span class="status-badge status-inactive">Inactive</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="product-actions">
+            <a href="#" class="btn-edit"><i class="fas fa-edit"></i> Edit</a>
+            <a
+              href="#"
+              class="btn-delete"
+              onclick="return confirm('Delete this product?')"
+              ><i class="fas fa-trash"></i> Delete</a
+            >
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 30px; color: #999">
+          <i
+            class="fas fa-inbox"
+            style="font-size: 2rem; margin-bottom: 10px"
+          ></i>
+          <p>No products found</p>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  // Real-time search and filter
+  document.getElementById("searchInput").addEventListener("keyup", filterTable);
+  document
+    .getElementById("categoryFilter")
+    .addEventListener("change", filterTable);
+  document
+    .getElementById("stockFilter")
+    .addEventListener("change", filterTable);
+
+  function filterTable() {
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const category = document.getElementById("categoryFilter").value;
+    const stock = document.getElementById("stockFilter").value;
+
+    const rows = document.querySelectorAll("tbody tr");
+    rows.forEach((row) => {
+      const name = row.cells[0].textContent.toLowerCase();
+      const barcode = row.cells[1].textContent.toLowerCase();
+      const cat = row.cells[2].textContent.toLowerCase();
+      const stockStatus = row.cells[7].textContent.toLowerCase();
+
+      let show = true;
+
+      if (search && !name.includes(search) && !barcode.includes(search)) {
+        show = false;
+      }
+
+      if (category && !cat.includes(category)) {
+        show = false;
+      }
+
+      if (stock === "in-stock" && stockStatus.includes("low")) {
+        show = false;
+      } else if (stock === "low-stock" && !stockStatus.includes("low")) {
+        show = false;
+      } else if (stock === "out-stock" && !stockStatus.includes("out")) {
+        show = false;
+      }
+
+      row.style.display = show ? "" : "none";
+    });
+  }
+</script>
+{% endblock %}
