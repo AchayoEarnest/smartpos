@@ -1,135 +1,80 @@
-{% extends 'smartpos/base.html' %} {% block title %}Dashboard - SmartPOS{%
-endblock %} {% block content %}
+{% extends 'smartpos/base.html' %} {% block title %} Dashboard - SmartPOS
+{%endblock %} {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-  <span class="badge bg-info" id="current-time"></span>
 </div>
 
-<!-- KPI Cards Row 1 -->
 <div class="row mb-4">
   <div class="col-md-3">
     <div class="kpi-card">
-      <div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
+      <div style="font-size: 2rem; color: #e74c3c; margin-bottom: 10px">
+        <i class="fas fa-dollar-sign"></i>
+      </div>
       <div class="kpi-label">Today's Sales</div>
       <div class="kpi-value">KES {{ today_sales|floatformat:2 }}</div>
     </div>
   </div>
   <div class="col-md-3">
     <div class="kpi-card">
-      <div class="kpi-icon"><i class="fas fa-shopping-cart"></i></div>
+      <div style="font-size: 2rem; color: #e74c3c; margin-bottom: 10px">
+        <i class="fas fa-shopping-cart"></i>
+      </div>
       <div class="kpi-label">Transactions</div>
       <div class="kpi-value">{{ today_transactions }}</div>
     </div>
   </div>
   <div class="col-md-3">
     <div class="kpi-card">
-      <div class="kpi-icon"><i class="fas fa-chart-pie"></i></div>
+      <div style="font-size: 2rem; color: #e74c3c; margin-bottom: 10px">
+        <i class="fas fa-chart-pie"></i>
+      </div>
       <div class="kpi-label">Profit</div>
       <div class="kpi-value">KES {{ today_profit|floatformat:2 }}</div>
     </div>
   </div>
   <div class="col-md-3">
     <div class="kpi-card">
-      <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
-      <div class="kpi-label">Low Stock Items</div>
-      <div class="kpi-value text-warning">{{ low_stock_count }}</div>
-    </div>
-  </div>
-</div>
-
-<!-- Charts Row -->
-<div class="row mb-4">
-  <div class="col-md-6">
-    <div class="chart-container">
-      <h5 class="mb-3">Sales Trend (Last 7 Days)</h5>
-      <canvas id="salesTrendChart"></canvas>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="chart-container">
-      <h5 class="mb-3">Payment Methods</h5>
-      <canvas id="paymentChart"></canvas>
-    </div>
-  </div>
-</div>
-
-<!-- Top Products -->
-<div class="row">
-  <div class="col-md-12">
-    <div class="chart-container">
-      <h5 class="mb-3">Top Selling Products</h5>
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Quantity Sold</th>
-              <th>Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for product in top_products %}
-            <tr>
-              <td>{{ product.product__name }}</td>
-              <td>{{ product.qty }}</td>
-              <td>KES {{ product.revenue|floatformat:2 }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="3" class="text-center">No sales data</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div style="font-size: 2rem; color: #f39c12; margin-bottom: 10px">
+        <i class="fas fa-exclamation-triangle"></i>
       </div>
+      <div class="kpi-label">Low Stock Items</div>
+      <div class="kpi-value" style="color: #f39c12">{{ low_stock_count }}</div>
     </div>
   </div>
 </div>
 
-{% endblock %} {% block extra_js %}
-<script>
-  // Update current time
-  function updateTime() {
-      const now = new Date();
-      document.getElementById('current-time').textContent = now.toLocaleString();
-  }
-  setInterval(updateTime, 1000);
-  updateTime();
-
-  // Sales Trend Chart
-  const salesTrendCtx = document.getElementById('salesTrendChart').getContext('2d');
-  new Chart(salesTrendCtx, {
-      type: 'line',
-      data: {
-          labels: {{ sales_trend|safe|default:"[]" }},
-          datasets: [{
-              label: 'Daily Sales (KES)',
-              data: {{ sales_trend|safe|default:"[]" }},
-              borderColor: '#e74c3c',
-              backgroundColor: 'rgba(231, 76, 60, 0.1)',
-              borderWidth: 2,
-              tension: 0.4,
-              fill: true
-          }]
-      },
-      options: {
-          responsive: true,
-          plugins: { legend: { display: false } }
-      }
-  });
-
-  // Payment Distribution Chart
-  const paymentCtx = document.getElementById('paymentChart').getContext('2d');
-  new Chart(paymentCtx, {
-      type: 'doughnut',
-      data: {
-          labels: ['Cash', 'M-Pesa', 'Card', 'Split Payment'],
-          datasets: [{
-              data: [30, 40, 20, 10],
-              backgroundColor: ['#27ae60', '#3498db', '#f39c12', '#9b59b6']
-          }]
-      },
-      options: { responsive: true }
-  });
-</script>
+<div
+  style="
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  "
+>
+  <h5>Top Selling Products</h5>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Quantity Sold</th>
+        <th>Revenue</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in top_products %}
+      <tr>
+        <td>{{ product.product__name }}</td>
+        <td>{{ product.qty }}</td>
+        <td>KES {{ product.revenue|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="3" style="text-align: center; color: #999">
+          No sales data
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

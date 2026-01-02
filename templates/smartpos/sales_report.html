@@ -1,222 +1,147 @@
 {% extends 'smartpos/base.html' %} {% block title %}Sales Report - SmartPOS{%
-endblock %} {% block extra_css %}
-<style>
-  .report-header {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
+endblock %} {% block content %}
+<div class="mb-4">
+  <h1><i class="fas fa-file-alt"></i> Sales Report</h1>
+</div>
 
-  .report-controls {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div
+      style="
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 4px solid #e74c3c;
+      "
+    >
+      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
+        Total Sales
+      </div>
+      <div
+        style="
+          font-size: 2rem;
+          font-weight: 700;
+          color: #2c3e50;
+          margin: 10px 0;
+        "
+      >
+        KES {{ total_sales|floatformat:2 }}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div
+      style="
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 4px solid #e74c3c;
+      "
+    >
+      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
+        Transactions
+      </div>
+      <div
+        style="
+          font-size: 2rem;
+          font-weight: 700;
+          color: #2c3e50;
+          margin: 10px 0;
+        "
+      >
+        {{ total_transactions }}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div
+      style="
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 4px solid #e74c3c;
+      "
+    >
+      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
+        Average
+      </div>
+      <div
+        style="
+          font-size: 2rem;
+          font-weight: 700;
+          color: #2c3e50;
+          margin: 10px 0;
+        "
+      >
+        KES {{ average_transaction|floatformat:2 }}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div
+      style="
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 4px solid #e74c3c;
+      "
+    >
+      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
+        Profit
+      </div>
+      <div
+        style="
+          font-size: 2rem;
+          font-weight: 700;
+          color: #2c3e50;
+          margin: 10px 0;
+        "
+      >
+        KES {{ total_profit|floatformat:2 }}
+      </div>
+    </div>
+  </div>
+</div>
 
-  .report-controls select,
-  .report-controls input {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-  }
-
-  .btn-export {
-    background: var(--secondary);
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    text-decoration: none;
-  }
-
-  .btn-export:hover {
-    background: #c0392b;
-  }
-
-  .report-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-
-  .summary-card {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-top: 4px solid var(--secondary);
-  }
-
-  .summary-label {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .summary-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin: 10px 0;
-  }
-
-  .report-table-container {
+<div
+  style="
     background: white;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
-</style>
-{% endblock %} {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1><i class="fas fa-file-alt"></i> Sales Report</h1>
-</div>
-
-<!-- Report Controls -->
-<div class="report-header">
-  <div class="report-controls">
-    <select id="periodSelect" onchange="updatePeriod()">
-      <option value="today">Today</option>
-      <option value="week">This Week</option>
-      <option value="month">This Month</option>
-      <option value="custom">Custom Range</option>
-    </select>
-
-    <div id="dateRange" style="display: none">
-      <input type="date" id="startDate" />
-      <span>to</span>
-      <input type="date" id="endDate" />
-      <button
-        onclick="generateReport()"
-        style="
-          padding: 8px 15px;
-          background: #3498db;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-        "
-      >
-        <i class="fas fa-search"></i> Generate
-      </button>
-    </div>
-
-    <button class="btn-export" onclick="exportReport('csv')">
-      <i class="fas fa-download"></i> Export CSV
-    </button>
-    <button class="btn-export" onclick="exportReport('pdf')">
-      <i class="fas fa-file-pdf"></i> Export PDF
-    </button>
-  </div>
-</div>
-
-<!-- Report Summary -->
-<div class="report-summary">
-  <div class="summary-card">
-    <div class="summary-label">Total Sales</div>
-    <div class="summary-value">
-      KES {{ total_sales|floatformat:2|default:"0.00" }}
-    </div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-label">Transactions</div>
-    <div class="summary-value">{{ total_transactions|default:"0" }}</div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-label">Average Transaction</div>
-    <div class="summary-value">
-      KES {{ average_transaction|floatformat:2|default:"0.00" }}
-    </div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-label">Period</div>
-    <div class="summary-value" style="font-size: 1.2rem" id="periodDisplay">
-      Today
-    </div>
-  </div>
-</div>
-
-<!-- Sales Table -->
-<div class="report-table-container">
-  <table class="table">
+  "
+>
+  <table class="table table-hover" style="margin: 0">
     <thead>
       <tr>
-        <th>Transaction ID</th>
+        <th>Date & Time</th>
         <th>Cashier</th>
-        <th>Customer</th>
-        <th>Items</th>
         <th>Amount</th>
         <th>Payment Method</th>
-        <th>Date & Time</th>
       </tr>
     </thead>
     <tbody>
       {% for sale in sales %}
       <tr>
-        <td><code>{{ sale.id|truncatechars:10 }}</code></td>
+        <td>{{ sale.created_at|date:"d M, H:i" }}</td>
         <td>{{ sale.cashier.username }}</td>
-        <td>{{ sale.customer.name|default:"Walk-in" }}</td>
-        <td>{{ sale.items.count }}</td>
-        <td style="font-weight: 600; color: var(--secondary)">
+        <td style="color: #e74c3c; font-weight: 600">
           KES {{ sale.final_amount }}
         </td>
-        <td>
-          <span class="badge bg-info" style="text-transform: capitalize"
-            >{{ sale.get_payment_method_display }}</span
-          >
-        </td>
-        <td>{{ sale.created_at|date:"d M, H:i" }}</td>
+        <td>{{ sale.get_payment_method_display }}</td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="7" style="text-align: center; padding: 30px; color: #999">
-          <i
-            class="fas fa-inbox"
-            style="font-size: 2rem; margin-bottom: 10px"
-          ></i>
-          <p>No sales data for this period</p>
+        <td colspan="4" style="text-align: center; padding: 30px; color: #999">
+          No sales data for this period
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-
-<script>
-  function updatePeriod() {
-    const period = document.getElementById("periodSelect").value;
-    const dateRange = document.getElementById("dateRange");
-
-    if (period === "custom") {
-      dateRange.style.display = "flex";
-    } else {
-      dateRange.style.display = "none";
-      window.location.href = `?period=${period}`;
-    }
-  }
-
-  function generateReport() {
-    const startDate = document.getElementById("startDate").value;
-    const endDate = document.getElementById("endDate").value;
-
-    if (!startDate || !endDate) {
-      alert("Please select both dates");
-      return;
-    }
-
-    window.location.href = `?start_date=${startDate}&end_date=${endDate}`;
-  }
-
-  function exportReport(format) {
-    const period = document.getElementById("periodSelect").value;
-    alert(`Export as ${format.toUpperCase()} - Feature coming soon!`);
-    // In production, implement export functionality
-  }
-</script>
 {% endblock %}

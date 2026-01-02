@@ -1,6 +1,21 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
+from .models import (
+    CustomUser,
+    Category,
+    Product,
+    Inventory,
+    Supplier,
+    Customer,
+    Sale,
+    SaleItem,
+    Expense,
+    CashDrawer,
+    Purchase,
+    PurchaseItem,
+)
+
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):
     list_display = ('username', 'role', 'is_active_staff', 'email')
