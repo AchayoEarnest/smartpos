@@ -1,80 +1,380 @@
-{% extends 'smartpos/base.html' %} {% block title %} Dashboard - SmartPOS
+<!-- FILE: templates/smartpos/dashboard.html -->
+{% extends 'smartpos/base.html' %} {% block title %}Dashboard - SmartPOS
 {%endblock %} {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-</div>
+<style>
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 
-<div class="row mb-4">
-  <div class="col-md-3">
-    <div class="kpi-card">
-      <div style="font-size: 2rem; color: #e74c3c; margin-bottom: 10px">
-        <i class="fas fa-dollar-sign"></i>
-      </div>
-      <div class="kpi-label">Today's Sales</div>
-      <div class="kpi-value">KES {{ today_sales|floatformat:2 }}</div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="kpi-card">
-      <div style="font-size: 2rem; color: #e74c3c; margin-bottom: 10px">
-        <i class="fas fa-shopping-cart"></i>
-      </div>
-      <div class="kpi-label">Transactions</div>
-      <div class="kpi-value">{{ today_transactions }}</div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="kpi-card">
-      <div style="font-size: 2rem; color: #e74c3c; margin-bottom: 10px">
-        <i class="fas fa-chart-pie"></i>
-      </div>
-      <div class="kpi-label">Profit</div>
-      <div class="kpi-value">KES {{ today_profit|floatformat:2 }}</div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="kpi-card">
-      <div style="font-size: 2rem; color: #f39c12; margin-bottom: 10px">
-        <i class="fas fa-exclamation-triangle"></i>
-      </div>
-      <div class="kpi-label">Low Stock Items</div>
-      <div class="kpi-value" style="color: #f39c12">{{ low_stock_count }}</div>
-    </div>
-  </div>
-</div>
-
-<div
-  style="
+  .kpi-card {
     background: white;
-    padding: 20px;
-    border-radius: 8px;
+    border-radius: 10px;
+    padding: 25px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  "
->
-  <h5>Top Selling Products</h5>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Quantity Sold</th>
-        <th>Revenue</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for product in top_products %}
-      <tr>
-        <td>{{ product.product__name }}</td>
-        <td>{{ product.qty }}</td>
-        <td>KES {{ product.revenue|floatformat:2 }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="3" style="text-align: center; color: #999">
-          No sales data
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    border-top: 4px solid #e74c3c;
+    transition: all 0.3s;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .kpi-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+
+  .kpi-label {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+
+  .kpi-change {
+    font-size: 0.85rem;
+    color: #27ae60;
+    margin-top: 8px;
+  }
+
+  .chart-container {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+  }
+
+  .chart-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+
+  .table-container {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-header {
+    background: #2c3e50;
+    color: white;
+    padding: 15px 20px;
+    font-weight: 600;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.5fr 1fr;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+  }
+
+  .table-row:hover {
+    background: #f9f9f9;
+  }
+
+  .product-name {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .product-qty {
+    text-align: center;
+    font-weight: 600;
+    color: #3498db;
+  }
+
+  .product-revenue {
+    color: #e74c3c;
+    font-weight: 700;
+  }
+
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+
+  .action-btn {
+    background: white;
+    border: 2px solid #ddd;
+    padding: 15px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s;
+    text-decoration: none;
+    color: #2c3e50;
+    font-weight: 600;
+  }
+
+  .action-btn:hover {
+    border-color: #e74c3c;
+    color: #e74c3c;
+    transform: translateY(-2px);
+  }
+
+  .action-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-5">
+  <div>
+    <h1 style="margin-bottom: 5px">
+      <i class="fas fa-chart-line"></i> Dashboard
+    </h1>
+    <p style="color: #7f8c8d; margin: 0">
+      Welcome back, {{ user.first_name|default:user.username }}!
+    </p>
+  </div>
+  <div>
+    <span class="badge bg-primary" style="font-size: 1rem; padding: 8px 12px"
+      >Today's Date: <span id="currentDate"></span
+    ></span>
+  </div>
 </div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+  <a href="/pos/" class="action-btn">
+    <div class="action-icon">🛒</div>
+    <div>New Sale</div>
+  </a>
+  <a href="/products/" class="action-btn">
+    <div class="action-icon">📦</div>
+    <div>Add Product</div>
+  </a>
+  <a href="/reports/sales/" class="action-btn">
+    <div class="action-icon">📊</div>
+    <div>View Reports</div>
+  </a>
+  <a href="/admin/" class="action-btn">
+    <div class="action-icon">⚙️</div>
+    <div>Settings</div>
+  </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon">💰</div>
+    <div class="kpi-label">Today's Sales</div>
+    <div class="kpi-value">KES {{ today_sales|floatformat:0 }}</div>
+    <div class="kpi-change">↑ {{ today_transactions }} transactions</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon">📈</div>
+    <div class="kpi-label">Total Profit</div>
+    <div class="kpi-value">KES {{ today_profit|floatformat:0 }}</div>
+    <div class="kpi-change">Profit margin</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon">🛍️</div>
+    <div class="kpi-label">Transactions</div>
+    <div class="kpi-value">{{ today_transactions }}</div>
+    <div class="kpi-change">Today</div>
+  </div>
+
+  <div class="kpi-card" style="border-top-color: #f39c12">
+    <div class="kpi-icon">⚠️</div>
+    <div class="kpi-label">Low Stock Items</div>
+    <div class="kpi-value" style="color: #f39c12">{{ low_stock_count }}</div>
+    <div class="kpi-change" style="color: #f39c12">Need reordering</div>
+  </div>
+
+  <div class="kpi-card" style="border-top-color: #e74c3c">
+    <div class="kpi-icon">❌</div>
+    <div class="kpi-label">Out of Stock</div>
+    <div class="kpi-value" style="color: #e74c3c">{{ out_of_stock_count }}</div>
+    <div class="kpi-change" style="color: #e74c3c">Critical</div>
+  </div>
+</div>
+
+<!-- Top Selling Products Table -->
+<div class="table-container">
+  <div class="table-header">
+    <div style="grid-column: 1 / -1">
+      <i class="fas fa-star"></i> Top Selling Products Today
+    </div>
+  </div>
+
+  <div style="max-height: 400px; overflow-y: auto">
+    {% for product in top_products %}
+    <div class="table-row">
+      <div class="product-name">{{ product.product__name }}</div>
+      <div class="product-qty">{{ product.qty|floatformat:0 }} units</div>
+      <div class="product-revenue">KES {{ product.revenue|floatformat:2 }}</div>
+      <div style="text-align: right">
+        <span class="badge bg-success">{{ forloop.counter }}</span>
+      </div>
+    </div>
+    {% empty %}
+    <div style="padding: 30px; text-align: center; color: #999">
+      <i
+        class="fas fa-inbox"
+        style="font-size: 2rem; margin-bottom: 10px; display: block"
+      ></i>
+      No sales data available yet
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Payment Methods Distribution -->
+<div class="chart-container">
+  <div class="chart-title">Payment Methods Distribution</div>
+  <div
+    style="
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    "
+  >
+    {% for method in payment_distribution %}
+    <div
+      style="
+        text-align: center;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 8px;
+      "
+    >
+      <div style="font-size: 2rem; margin-bottom: 10px">
+        {% if method.payment_method == 'cash' %}💵 {% elif method.payment_method
+        == 'mpesa' %}📱 {% elif method.payment_method == 'card' %}💳 {% else
+        %}🔀 {% endif %}
+      </div>
+      <div
+        style="
+          font-weight: 600;
+          color: #2c3e50;
+          margin-bottom: 5px;
+          text-transform: capitalize;
+        "
+      >
+        {{ method.payment_method }}
+      </div>
+      <div style="font-size: 1.5rem; color: #e74c3c; font-weight: 700">
+        {{ method.count }}
+      </div>
+      <div style="font-size: 0.85rem; color: #7f8c8d">
+        KES {{ method.total|floatformat:2 }}
+      </div>
+    </div>
+    {% empty %}
+    <div
+      style="
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 30px;
+        color: #999;
+      "
+    >
+      No payment data available
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="chart-container">
+  <div class="chart-title">Quick Stats</div>
+  <div
+    style="
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    "
+  >
+    <div
+      style="
+        padding: 15px;
+        background: #e8f4f8;
+        border-radius: 8px;
+        border-left: 4px solid #3498db;
+      "
+    >
+      <div style="color: #7f8c8d; font-size: 0.85rem; margin-bottom: 8px">
+        Average Transaction
+      </div>
+      <div style="font-size: 1.8rem; font-weight: 700; color: #2c3e50">
+        KES {{
+        today_sales|add:1|divide:today_transactions|default:"0"|floatformat:0 }}
+      </div>
+    </div>
+
+    <div
+      style="
+        padding: 15px;
+        background: #f0f8e8;
+        border-radius: 8px;
+        border-left: 4px solid #27ae60;
+      "
+    >
+      <div style="color: #7f8c8d; font-size: 0.85rem; margin-bottom: 8px">
+        Profit Margin
+      </div>
+      <div style="font-size: 1.8rem; font-weight: 700; color: #2c3e50">
+        {% if today_profit > 0 %} {{
+        today_profit|add:1|divide:today_sales|default:"0"|multiply:"100"|floatformat:1
+        }}% {% else %} 0% {% endif %}
+      </div>
+    </div>
+
+    <div
+      style="
+        padding: 15px;
+        background: #f8f0e8;
+        border-radius: 8px;
+        border-left: 4px solid #f39c12;
+      "
+    >
+      <div style="color: #7f8c8d; font-size: 0.85rem; margin-bottom: 8px">
+        Stock Status
+      </div>
+      <div style="font-size: 1.8rem; font-weight: 700; color: #2c3e50">
+        {{ low_stock_count }} items
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Update current date
+  function updateDate() {
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    const today = new Date().toLocaleDateString("en-US", options);
+    document.getElementById("currentDate").textContent = today;
+  }
+
+  // Update every minute
+  setInterval(updateDate, 60000);
+  updateDate();
+</script>
 {% endblock %}

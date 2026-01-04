@@ -1,147 +1,308 @@
-{% extends 'smartpos/base.html' %} {% block title %}Sales Report - SmartPOS{%
-endblock %} {% block content %}
-<div class="mb-4">
-  <h1><i class="fas fa-file-alt"></i> Sales Report</h1>
-</div>
+<!-- FILE: templates/smartpos/sales_report.html -->
+{% extends 'smartpos/base.html' %} {% block title %}Sales Report - SmartPOS
+{%endblock %} {% block content %}
+<style>
+  .report-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 
-<div class="row mb-4">
-  <div class="col-md-3">
-    <div
-      style="
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border-top: 4px solid #e74c3c;
-      "
-    >
-      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
-        Total Sales
-      </div>
-      <div
-        style="
-          font-size: 2rem;
-          font-weight: 700;
-          color: #2c3e50;
-          margin: 10px 0;
-        "
-      >
-        KES {{ total_sales|floatformat:2 }}
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div
-      style="
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border-top: 4px solid #e74c3c;
-      "
-    >
-      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
-        Transactions
-      </div>
-      <div
-        style="
-          font-size: 2rem;
-          font-weight: 700;
-          color: #2c3e50;
-          margin: 10px 0;
-        "
-      >
-        {{ total_transactions }}
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div
-      style="
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border-top: 4px solid #e74c3c;
-      "
-    >
-      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
-        Average
-      </div>
-      <div
-        style="
-          font-size: 2rem;
-          font-weight: 700;
-          color: #2c3e50;
-          margin: 10px 0;
-        "
-      >
-        KES {{ average_transaction|floatformat:2 }}
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div
-      style="
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border-top: 4px solid #e74c3c;
-      "
-    >
-      <div style="color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase">
-        Profit
-      </div>
-      <div
-        style="
-          font-size: 2rem;
-          font-weight: 700;
-          color: #2c3e50;
-          margin: 10px 0;
-        "
-      >
-        KES {{ total_profit|floatformat:2 }}
-      </div>
-    </div>
-  </div>
-</div>
-
-<div
-  style="
+  .report-header {
     background: white;
-    border-radius: 8px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .report-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+  }
+
+  .report-controls select,
+  .report-controls input {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.95rem;
+  }
+
+  .btn-export {
+    padding: 10px 15px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+
+  .btn-export:hover {
+    background: #c0392b;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+
+  .summary-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-top: 4px solid #e74c3c;
+  }
+
+  .summary-label {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .summary-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+
+  .sales-table {
+    background: white;
+    border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  "
->
-  <table class="table table-hover" style="margin: 0">
-    <thead>
-      <tr>
-        <th>Date & Time</th>
-        <th>Cashier</th>
-        <th>Amount</th>
-        <th>Payment Method</th>
-      </tr>
-    </thead>
-    <tbody>
+  }
+
+  .table-header {
+    background: #2c3e50;
+    color: white;
+    padding: 15px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    font-weight: 600;
+    gap: 15px;
+  }
+
+  .table-body {
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s;
+  }
+
+  .table-row:hover {
+    background: #f9f9f9;
+  }
+
+  .transaction-id {
+    font-family: monospace;
+    color: #3498db;
+    font-weight: 600;
+  }
+
+  .transaction-amount {
+    color: #e74c3c;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .payment-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .badge-cash {
+    background: #d5f4e6;
+    color: #27ae60;
+  }
+  .badge-mpesa {
+    background: #d6eaf8;
+    color: #2980b9;
+  }
+  .badge-card {
+    background: #fadbd8;
+    color: #c0392b;
+  }
+  .badge-split {
+    background: #fdebd0;
+    color: #e67e22;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: #999;
+  }
+</style>
+
+<div class="report-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-file-alt"></i> Sales Report</h1>
+  </div>
+
+  <!-- Report Controls -->
+  <div class="report-header">
+    <div class="report-controls">
+      <select
+        id="periodSelect"
+        onchange="updatePeriod()"
+        style="padding: 10px 15px"
+      >
+        <option value="today">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+        <option value="custom">Custom Range</option>
+      </select>
+
+      <div id="dateRange" style="display: none; display: flex; gap: 10px">
+        <input type="date" id="startDate" />
+        <span>to</span>
+        <input type="date" id="endDate" />
+        <button
+          onclick="generateReport()"
+          style="
+            padding: 10px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+          "
+        >
+          <i class="fas fa-search"></i> Generate
+        </button>
+      </div>
+
+      <button
+        class="btn-export"
+        onclick="exportReport('csv')"
+        style="margin-left: auto"
+      >
+        <i class="fas fa-download"></i> Export CSV
+      </button>
+      <button class="btn-export" onclick="window.print()">
+        <i class="fas fa-print"></i> Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="summary-card" style="border-top-color: #e74c3c">
+      <div class="summary-label">Total Sales</div>
+      <div class="summary-value">KES {{ total_sales|floatformat:0 }}</div>
+    </div>
+    <div class="summary-card" style="border-top-color: #27ae60">
+      <div class="summary-label">Transactions</div>
+      <div class="summary-value">{{ total_transactions }}</div>
+    </div>
+    <div class="summary-card" style="border-top-color: #3498db">
+      <div class="summary-label">Average Transaction</div>
+      <div class="summary-value">
+        KES {{ average_transaction|floatformat:0 }}
+      </div>
+    </div>
+    <div class="summary-card" style="border-top-color: #f39c12">
+      <div class="summary-label">Total Profit</div>
+      <div class="summary-value">KES {{ total_profit|floatformat:0 }}</div>
+    </div>
+  </div>
+
+  <!-- Sales Table -->
+  <div class="sales-table">
+    <div class="table-header">
+      <div>Transaction ID</div>
+      <div>Cashier</div>
+      <div>Amount</div>
+      <div>Payment Method</div>
+      <div>Date & Time</div>
+    </div>
+
+    <div class="table-body">
       {% for sale in sales %}
-      <tr>
-        <td>{{ sale.created_at|date:"d M, H:i" }}</td>
-        <td>{{ sale.cashier.username }}</td>
-        <td style="color: #e74c3c; font-weight: 600">
-          KES {{ sale.final_amount }}
-        </td>
-        <td>{{ sale.get_payment_method_display }}</td>
-      </tr>
+      <div class="table-row">
+        <div class="transaction-id">{{ sale.id|truncatechars:12 }}</div>
+        <div style="font-weight: 600">{{ sale.cashier.username }}</div>
+        <div class="transaction-amount">
+          KES {{ sale.final_amount|floatformat:2 }}
+        </div>
+        <div>
+          {% if sale.payment_method == 'cash' %}
+          <span class="payment-badge badge-cash">💵 Cash</span>
+          {% elif sale.payment_method == 'mpesa' %}
+          <span class="payment-badge badge-mpesa">📱 M-Pesa</span>
+          {% elif sale.payment_method == 'card' %}
+          <span class="payment-badge badge-card">💳 Card</span>
+          {% else %}
+          <span class="payment-badge badge-split">🔀 Split</span>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.9rem; color: #7f8c8d">
+          {{ sale.created_at|date:"d M, H:i" }}
+        </div>
+      </div>
       {% empty %}
-      <tr>
-        <td colspan="4" style="text-align: center; padding: 30px; color: #999">
-          No sales data for this period
-        </td>
-      </tr>
+      <div class="empty-state">
+        <i
+          class="fas fa-inbox"
+          style="font-size: 2.5rem; margin-bottom: 15px; display: block"
+        ></i>
+        <p>No sales data for this period</p>
+      </div>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
+  </div>
 </div>
+
+<script>
+  function updatePeriod() {
+    const period = document.getElementById("periodSelect").value;
+    const dateRange = document.getElementById("dateRange");
+
+    if (period === "custom") {
+      dateRange.style.display = "flex";
+    } else {
+      dateRange.style.display = "none";
+      window.location.href = `?period=${period}`;
+    }
+  }
+
+  function generateReport() {
+    const startDate = document.getElementById("startDate").value;
+    const endDate = document.getElementById("endDate").value;
+
+    if (!startDate || !endDate) {
+      alert("Please select both dates");
+      return;
+    }
+
+    window.location.href = `?start_date=${startDate}&end_date=${endDate}`;
+  }
+
+  function exportReport(format) {
+    alert(`Export as ${format.toUpperCase()} - Feature coming soon!`);
+  }
+</script>
 {% endblock %}
