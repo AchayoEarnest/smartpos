@@ -319,8 +319,7 @@
         Average Transaction
       </div>
       <div style="font-size: 1.8rem; font-weight: 700; color: #2c3e50">
-        KES {{
-        today_sales|add:1|divide:today_transactions|default:"0"|floatformat:0 }}
+        KES {{ average_transaction|default:"0"|floatformat:0 }}
       </div>
     </div>
 
@@ -336,9 +335,7 @@
         Profit Margin
       </div>
       <div style="font-size: 1.8rem; font-weight: 700; color: #2c3e50">
-        {% if today_profit > 0 %} {{
-        today_profit|add:1|divide:today_sales|default:"0"|multiply:"100"|floatformat:1
-        }}% {% else %} 0% {% endif %}
+        {{ profit_margin|default:"0"|floatformat:1 }}%
       </div>
     </div>
 

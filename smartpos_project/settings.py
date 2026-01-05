@@ -59,17 +59,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'smartpos_project.wsgi.application'
 
-# Database Configuration
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': config('DB_NAME', default='smartpos_db'),
-#         'USER': config('DB_USER', default='postgres'),
-#         'PASSWORD': config('DB_PASSWORD', default='password'),
-#         'HOST': config('DB_HOST', default='localhost'),
-#         'PORT': config('DB_PORT', default='5432'),
-#     }
-# }
+
 
 DATABASES = {
     'default': {
